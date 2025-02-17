@@ -10,4 +10,11 @@ class Interface():
 
   def act(self, action):
     # print("World: " + str(self.world))
-    self.world = self.world + action - 3
+    if action == 0:
+      self.world = self.world - 2
+    elif action == 1:
+      self.world = self.world - 1
+    elif action == 2:
+      self.world = self.world + 1
+    else:
+      self.world = self.world + 2

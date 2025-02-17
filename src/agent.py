@@ -17,11 +17,12 @@ class Agent(gymnasium.Env):
     self.observation_space = gymnasium.spaces.Box(low=-1.0, high=1.0, shape=(state_dim,), dtype=np.float32)
     # Action on the world and thougth pointer
     self.action_space = gymnasium.spaces.MultiDiscrete([
-      5, 
+      4, 
       self.memory.getCapacity()]
     )
     self.averageReward = 0
     self.rewards = []
+    self.world_states = []
 
   def reset(self, seed=None):
     self.memory = Memory(self.capacity)
@@ -47,15 +48,16 @@ class Agent(gymnasium.Env):
     # print("Perception difference: " + str(perception_difference))
     value = self.evaluate(perception_difference)
     # print("Value: " + str(value))
-    self.averageReward = (self.averageReward + value) / 2
     # print("Average reward: " + str(self.averageReward))
-    reward = 1 / (1 + np.exp(-(value - self.averageReward)))
+    # reward =  value - self.averageReward
+    reward = 1 / (1 + np.exp(-(value - self.memory.getMeanReward())))
 
     # Machine act
     self.world.act(action_world)
 
     # Update the memory with the new observation
-    self.memory.update(world_input)
+    self.memory.update(world_input, reward)
+    self.world_states.append(world_input)
 
     # self.render()
     # print("Reward: " + str(reward))
@@ -75,13 +77,13 @@ if __name__ == '__main__':
   # Parallel environments
   model = PPO("MlpPolicy", env, verbose=1)
   model.learn(
-    total_timesteps=20000,
+    total_timesteps=50000,
     progress_bar=True
   )
   import matplotlib.pyplot as plt
 
   plt.plot(env.rewards)
-  window_size = 30
+  window_size = 300
   if len(env.rewards) >= window_size:
     filtered_rewards = np.convolve(env.rewards, np.ones(window_size) / window_size, mode='valid')
   else:
@@ -91,4 +93,18 @@ if __name__ == '__main__':
   plt.xlabel('Timesteps')
   plt.ylabel('Reward')
   plt.title('Rewards over time')
+  plt.show()
+  import matplotlib.pyplot as plt
+
+  # Convert list of world states to a numpy array
+  world_states_array = np.array(env.world_states)
+
+  # Plot each dimension of the world state separately
+  for i in range(world_states_array.shape[1]):
+    plt.plot(world_states_array[:, i], label=f'World State Dimension {i}')
+
+  plt.legend()
+  plt.xlabel('Timesteps')
+  plt.ylabel('World State Value')
+  plt.title('World States over Time')
   plt.show()
