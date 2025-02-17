@@ -1,1 +1,1 @@
-# Self evaluating estimator network (SEEN)
+# Vulcanus

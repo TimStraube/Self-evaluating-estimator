@@ -1,11 +1,13 @@
 # World interface
+import numpy as np
 
 class Interface():
-  def __init__(self, world):
-    self.world = world
+  def __init__(self):
+    self.world = np.array([0, 0])
 
-  async def observe(self):
-    pass
+  def observe(self):
+    return self.world
 
-  async def act(self, action):
-    pass
+  def act(self, action):
+    # print("World: " + str(self.world))
+    self.world = self.world + action - 3
