@@ -10,7 +10,7 @@ class Agent(gymnasium.Env):
     super().__init__()
     # Define a space for stateOfMind observations; for example, assume it outputs a vector of length 10
     state_dim = 2
-    self.capacity = 10
+    self.capacity = 50
     self.memory = Memory(self.capacity)
     self.world = Interface()
     # Combine both into a single observation as a Dict space
@@ -77,7 +77,7 @@ if __name__ == '__main__':
   # Parallel environments
   model = PPO("MlpPolicy", env, verbose=1)
   model.learn(
-    total_timesteps=50000,
+    total_timesteps=100000,
     progress_bar=True
   )
   import matplotlib.pyplot as plt
