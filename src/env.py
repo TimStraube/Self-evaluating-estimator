@@ -9,7 +9,8 @@ class World():
 
   def act(self, action):
     # print("World: " + str(self.world))
+    print("Action: " + str(action))
     if action == 0:
-      self.world -= 1
-    elif action == 1:
-      self.world += 1
+      self.world = self.world - 1
+    else:
+      self.world = self.world + 1
