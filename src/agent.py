@@ -3,7 +3,7 @@ import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from memory import Memory
-from interface import Interface
+from env import World
 
 class Agent(gymnasium.Env):
   def __init__(self):
@@ -12,12 +12,12 @@ class Agent(gymnasium.Env):
     state_dim = 2
     self.capacity = 50
     self.memory = Memory(self.capacity)
-    self.world = Interface()
+    self.world = World()
     # Combine both into a single observation as a Dict space
     self.observation_space = gymnasium.spaces.Box(low=-1.0, high=1.0, shape=(state_dim,), dtype=np.float32)
     # Action on the world and thougth pointer
     self.action_space = gymnasium.spaces.MultiDiscrete([
-      4, 
+      2, 
       self.memory.getCapacity()]
     )
     self.averageReward = 0
@@ -26,7 +26,7 @@ class Agent(gymnasium.Env):
 
   def reset(self, seed=None):
     self.memory = Memory(self.capacity)
-    self.world = Interface()
+    self.world = World()
     self.averageReward = 0
     return self.memory.getStateOfMind()
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
   import matplotlib.pyplot as plt
 
   plt.plot(env.rewards)
-  window_size = 300
+  window_size = 600
   if len(env.rewards) >= window_size:
     filtered_rewards = np.convolve(env.rewards, np.ones(window_size) / window_size, mode='valid')
   else:
