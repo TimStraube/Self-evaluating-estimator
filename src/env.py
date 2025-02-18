@@ -8,8 +8,6 @@ class World():
     return self.world
 
   def act(self, action):
-    # print("World: " + str(self.world))
-    print("Action: " + str(action))
     if action == 0:
       self.world = self.world - 1
     else:

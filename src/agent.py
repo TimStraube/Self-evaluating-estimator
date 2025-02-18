@@ -79,7 +79,7 @@ if __name__ == '__main__':
   # Parallel environments
   model = PPO("MlpPolicy", env, verbose=1)
   model.learn(
-    total_timesteps=1000,
+    total_timesteps=10000,
     progress_bar=True
   )
   import matplotlib.pyplot as plt
