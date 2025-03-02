@@ -10,11 +10,11 @@ class Agent(gymnasium.Env):
     super().__init__()
     # Define a space for stateOfMind observations; for example, assume it outputs a vector of length 10
     state_dim = 2
-    self.capacity = 5
+    self.capacity = 250
     self.memory = Memory(self.capacity)
     self.world = World()
     # Combine both into a single observation as a Dict space
-    self.observation_space = gymnasium.spaces.Box(low=-1.0, high=1.0, shape=(state_dim,), dtype=np.float32)
+    self.observation_space = gymnasium.spaces.Box(low=-10.0, high=10.0, shape=(state_dim,), dtype=np.float32)
     # Action on the world and thougth pointer
     self.action_space = gymnasium.spaces.MultiDiscrete([
       2, 
@@ -50,7 +50,7 @@ class Agent(gymnasium.Env):
     # print("Value: " + str(value))
     # print("Average reward: " + str(self.averageReward))
     # No activation function on the reward gain
-    # reward =  value - self.averageReward
+    # reward = value - self.averageReward
     # Logistic
     reward = 1 / (1 + np.exp(-(value - self.memory.getMeanReward())))
 
@@ -79,13 +79,13 @@ if __name__ == '__main__':
   # Parallel environments
   model = PPO("MlpPolicy", env, verbose=1)
   model.learn(
-    total_timesteps=10000,
+    total_timesteps=50000,
     progress_bar=True
   )
   import matplotlib.pyplot as plt
 
   plt.plot(env.rewards)
-  window_size = 20
+  window_size = 500
   if len(env.rewards) >= window_size:
     filtered_rewards = np.convolve(env.rewards, np.ones(window_size) / window_size, mode='valid')
   else:

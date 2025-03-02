@@ -1,0 +1,30 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+% Global styles for nodes and paths
+\tikzset{
+  every node/.style={text=black, draw=black, font=\Large, line width=0.5mm},
+  every path/.style={draw=black, line width=0.5mm}
+}
+
+\begin{document}
+\begin{tikzpicture}[node distance=2cm, auto]
+  % Nodes 
+  \node (agent) [minimum width=4cm, minimum height=4cm, rounded corners] {RL Agent};
+  \node (memory) [above=-1cm of agent, xshift=9cm, minimum width=8cm, minimum height=2cm, rounded corners] {$[O_0 O_1 O_{C-1}]_M$};
+  \node (world) [right=14cm of agent, minimum width=4cm, minimum height=4cm, rounded corners] {MDP World};
+  \node (evaluator) [rectangle, below=-1cm of agent, xshift=6cm, rounded corners] {$r - \frac{1}{C}\sum{r_M}$};
+  \node (calculator) [rectangle, below=-1cm of agent, xshift=12cm, rounded corners] {$\sigma(O(a_t)-O_{W})$};
+
+  \draw[->] (memory) to[bend left=10] node[midway, above, draw=none, fill=none] {$O(a_t)$} (agent);
+  \draw[->] (memory) to[bend right=5] node[midway, left, draw=none, fill=none] {$\frac{1}{C}\sum{r_{M, t}}$} (evaluator);
+  \draw[->] (world) to[bend left=5] node[midway, above, draw=none, fill=none] {$O_{W, t}$} (calculator);
+  \draw[->] (memory) to[bend left=10] node[midway, left, draw=none, fill=none] {$O(a_t)$} (calculator);
+  \draw[->] (calculator) to[bend left=0] node[midway, above, draw=none, fill=none] {$r_{\Delta, t}$} (evaluator);
+  \draw[->] (agent) to[bend left=10] node[midway, above, draw=none, fill=none] {$a_{M, t} \in {[1, C]}$} (memory);
+  \draw[->] (agent) to[bend left=45] node[midway, above, draw=none, fill=none] {$a_{W, t}$} (world);
+  \draw[->] (world) to[bend left=0] node[midway, above, draw=none, fill=none] {$O_{W, t+1}$} (memory);
+  \draw[->] (evaluator) to[bend left=10] node[midway, above, draw=none, fill=none] {$r_t$} (agent);
+\end{tikzpicture}
+\end{document}
