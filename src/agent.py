@@ -8,7 +8,6 @@ from env import World
 class Agent(gymnasium.Env):
   def __init__(self):
     super().__init__()
-    # Define a space for stateOfMind observations; for example, assume it outputs a vector of length 10
     state_dim = 2
     self.capacity = 250
     self.memory = Memory(self.capacity)
@@ -31,11 +30,8 @@ class Agent(gymnasium.Env):
     return self.memory.getStateOfMind()
 
   def step(self, action):
-    # print("Action: " + str(action))
     action_world = action[0]
-    # Select a observation from the observation memory
     thought_pointer = action[1]
-    # print("Thought pointer: " + str(thought_pointer))
     self.memory.setThoughtPointer(thought_pointer)
     current_state_of_mind = self.memory.getStateOfMind()
 
