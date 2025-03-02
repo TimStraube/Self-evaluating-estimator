@@ -12,10 +12,10 @@
 \begin{tikzpicture}[node distance=2cm, auto]
   % Nodes 
   \node (agent) [minimum width=4cm, minimum height=4cm, rounded corners] {RL Agent};
-  \node (memory) [above=-1cm of agent, xshift=9cm, minimum width=8cm, minimum height=2cm, rounded corners] {$[O_0 O_1 O_{C-1}]_M$};
+  \node (memory) [above=-1cm of agent, xshift=9cm, minimum width=8cm, minimum height=2cm, rounded corners] {$[O_0 O_1 O_{C-1}]_{M, t}$};
   \node (world) [right=14cm of agent, minimum width=4cm, minimum height=4cm, rounded corners] {MDP World};
-  \node (evaluator) [rectangle, below=-1cm of agent, xshift=6cm, rounded corners] {$r - \frac{1}{C}\sum{r_M}$};
-  \node (calculator) [rectangle, below=-1cm of agent, xshift=12cm, rounded corners] {$\sigma(O(a_t)-O_{W})$};
+  \node (evaluator) [rectangle, below=-1cm of agent, xshift=6cm, rounded corners] {$r - \frac{1}{C}\sum{r_{M_t}}$};
+  \node (calculator) [rectangle, below=-1cm of agent, xshift=12cm, rounded corners] {$\sigma(O(a_t)-O_{W, t})$};
 
   \draw[->] (memory) to[bend left=10] node[midway, above, draw=none, fill=none] {$O(a_t)$} (agent);
   \draw[->] (memory) to[bend right=5] node[midway, left, draw=none, fill=none] {$\frac{1}{C}\sum{r_{M, t}}$} (evaluator);
