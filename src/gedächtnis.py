@@ -5,7 +5,7 @@ from erinnerung import Erinnerung
 class Gedächtnis():
     def __init__(self, kapazität):
         self.kapazität = kapazität
-        self.speicher = np.array([Erinnerung(np.zeros((6, 9, 9)), -10000) for _ in range(kapazität)], dtype=object)
+        self.speicher = np.array([Erinnerung(np.zeros((3, 3)), 0) for _ in range(kapazität)], dtype=object)
         self.schreibZeiger = 0
         self.belohnungen = []
 

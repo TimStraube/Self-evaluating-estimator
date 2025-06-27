@@ -2,35 +2,34 @@ import gymnasium
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
+from envs.test import Test
 from erinnerung import Erinnerung
 from gedächtnis import Gedächtnis
 from umwelt import Umwelt
 
-
 class Agent(gymnasium.Env):
     def __init__(self):
         super().__init__()
-        self.gedächtnis = Gedächtnis(250)
-        self.umwelt = Umwelt()
+        self.gedächtnis = Gedächtnis(5)
+
+        self.umwelt = Umwelt(Test())
         
-        self.state_dim = self.umwelt.observe().shape
-        print(self.state_dim)
+        self.zustand_dimension = self.umwelt.observe().shape
+        print(self.zustand_dimension)
         # Combine both into a single observation as a Dict space
         self.observation_space = gymnasium.spaces.Box(
-            low=0, high=1.0, shape=self.state_dim, dtype=np.int16)
+            low=0, high=1.0, shape=self.zustand_dimension, dtype=np.int16)
         # Action on the world and thougth pointer
         self.action_space = gymnasium.spaces.MultiDiscrete([
             self.gedächtnis.getKapazität(),
-            2,
-            2,
-            81
+            self.umwelt.umwelt.aktionsraum, 
         ])
         self.belohnungsErwartung = 0
-        self.rewards = []
+        self.belohnungen = []
         self.umwelt_states = []
 
     def reset(self, seed=None):
-        self.gedächtnis = Gedächtnis(250)
+        self.gedächtnis = Gedächtnis(5)
         self.umwelt = Umwelt()
         self.belohnungsErwartung = 0
         return self.gedächtnis.getBild(), {}
@@ -70,7 +69,7 @@ class Agent(gymnasium.Env):
         # self.render()
         # print("Reward: " + str(reward))
 
-        self.rewards.append(reward)
+        self.belohnungen.append(reward)
 
         print("Reward: " + str(reward))
 
