@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QScrollArea,  # hinzugefügt
 )
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import QTimer, Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor, QPixmap, QPainter, QImage, QFont
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -25,6 +25,24 @@ from umwelt import Umwelt
 from src.agent import Agent
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
+
+
+class TrainingThread(QThread):
+    finished = pyqtSignal()
+    def __init__(self, agent, steps=1000):
+        super().__init__()
+        self.agent = agent
+        self.steps = steps
+    def run(self):
+        try:
+            from stable_baselines3 import PPO
+            model = PPO("MlpPolicy", self.agent, verbose=1)
+            model.learn(total_timesteps=self.steps, progress_bar=False)
+        except Exception as e:
+            import traceback
+            print("Fehler im TrainingThread:", e)
+            traceback.print_exc()
+        self.finished.emit()
 
 
 class MainWindow(QMainWindow):
@@ -138,6 +156,13 @@ class MainWindow(QMainWindow):
         self.memory_view_mode_combo.currentIndexChanged.connect(self.update_memory_visualization)
         self.agent_layout.addWidget(self.memory_view_mode_combo)
 
+        # Wahrnehmungsdissonanzmatrix-Anzeige
+        self.dissonanz_label = QLabel()
+        self.dissonanz_label.setWordWrap(True)
+        self.dissonanz_label.setMinimumHeight(80)
+        self.agent_layout.addWidget(QLabel("Wahrnehmungsdissonanzmatrix:"))
+        self.agent_layout.addWidget(self.dissonanz_label)
+
     def get_env_classes(self):
         env_dir = os.path.join(os.path.dirname(__file__), "../envs")
         env_files = [
@@ -173,7 +198,8 @@ class MainWindow(QMainWindow):
         try:
             module = importlib.import_module(modulename)
             env_class = getattr(module, classname)
-            self.agent.umwelt = Umwelt(env_class())
+            neue_umwelt = Umwelt(env_class())
+            self.agent.set_umwelt(neue_umwelt)
             self.umwelt = self.agent.umwelt
             self.label.setText(str(self.umwelt.zustand_welt))
             if hasattr(self.umwelt, "zustand"):
@@ -207,7 +233,7 @@ class MainWindow(QMainWindow):
             self.sim_button.setText("Simulation starten")
             return
         # Beispielaktion: Zufällige Aktion für Agent
-        aktion = [np.random.randint(self.agent.gedächtnis.getKapazität()), 0, np.random.randint(self.umwelt.aktionsraum)]
+        aktion = [np.random.randint(self.agent.gedächtnis.getKapazität()), np.random.randint(self.umwelt.aktionsraum)]
         _, reward, _, _, _ = self.agent.step(aktion)
         self.label.setText(str(self.umwelt.zustand_welt))
         if hasattr(self.umwelt, "zustand"):
@@ -215,6 +241,7 @@ class MainWindow(QMainWindow):
         self.sim_steps += 1
         self.update_memory_visualization()
         self.update_reward_plot()
+        self.update_dissonanz_matrix()
 
     def create_memory(self, size):
         try:
@@ -290,6 +317,24 @@ class MainWindow(QMainWindow):
         except Exception:
             self.memory_label.clear()
 
+    def update_dissonanz_matrix(self):
+        matrix = getattr(self.agent, "wahrnehmungsdissonanzmatrix", None)
+        if matrix is None:
+            self.dissonanz_label.setText("-")
+            return
+        arr = np.array(matrix)
+        # Bei 3D: nur erste Schicht anzeigen
+        if arr.ndim == 3:
+            arr = arr[0]
+        html = "<table style='border-collapse:collapse; font-family:monospace; font-size:12px;'>"
+        for row in arr:
+            html += "<tr>"
+            for val in row:
+                html += "<td style='border:1px solid #bbb; min-width:18px; text-align:center; padding:2px;'>{:.2f}</td>".format(val)
+            html += "</tr>"
+        html += "</table>"
+        self.dissonanz_label.setText(html)
+
     def update_training_status_point(self, zustand):
         emojis = {
             Trainingszustand.BEREIT: "🟢",
@@ -302,13 +347,20 @@ class MainWindow(QMainWindow):
         self.training_status_label.setText(f"{emoji}  {zustand.value.capitalize()}")
 
     def toggle_training(self):
-        if self.trainingszustand != Trainingszustand.AKTIV:
-            self.trainingszustand = Trainingszustand.AKTIV
-            self.train_toggle_button.setText("Training stoppen")
-        else:
-            self.trainingszustand = Trainingszustand.INAKTIV
-            self.train_toggle_button.setText("Training starten")
+        # Training mit aktueller Umwelt im Thread starten
+        self.trainingszustand = Trainingszustand.AKTIV
+        self.train_toggle_button.setText("Training läuft...")
         self.update_training_status_point(self.trainingszustand)
+        self.training_thread = TrainingThread(self.agent, steps=1000)
+        self.training_thread.finished.connect(self.training_finished)
+        self.training_thread.start()
+
+    def training_finished(self):
+        self.trainingszustand = Trainingszustand.FERTIG
+        self.train_toggle_button.setText("Training starten")
+        self.update_training_status_point(self.trainingszustand)
+        self.update_reward_plot()
+        self.update_dissonanz_matrix()
 
     def update_reward_plot(self):
         rewards = self.agent.belohnungen

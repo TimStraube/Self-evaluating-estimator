@@ -15,8 +15,9 @@ class Umwelt():
 
     def act(self, aktion):
         self.zustand = Umweltzustand.AKTIV
+        # Erwartet jetzt einen Integer als Aktion!
         self.zustand_welt = self.umwelt.step(
-            self.zustand_welt, aktion[1])
+            self.zustand_welt, aktion)
             
     def simuliere(self):
         # Simuliere nur einen Schritt!

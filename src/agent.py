@@ -11,7 +11,6 @@ class Agent(gymnasium.Env):
     def __init__(self):
         super().__init__()
         self.gedächtnis = Gedächtnis(5)
-
         self.umwelt = Umwelt(Test())
         
         self.zustand_dimension = self.umwelt.observe().shape
@@ -28,65 +27,68 @@ class Agent(gymnasium.Env):
         self.belohnungen = []
         self.umwelt_states = []
 
+    def set_umwelt(self, umwelt):
+        self.umwelt = umwelt
+        self.zustand_dimension = self.umwelt.observe().shape
+        self.observation_space = gymnasium.spaces.Box(
+            low=0, high=1.0, shape=self.zustand_dimension, dtype=np.int16)
+        self.action_space = gymnasium.spaces.MultiDiscrete([
+            self.gedächtnis.getKapazität(),
+            self.umwelt.umwelt.aktionsraum, 
+        ])
+
     def reset(self, seed=None):
         self.gedächtnis = Gedächtnis(5)
-        self.umwelt = Umwelt()
+        # self.umwelt = Umwelt()  # Entfernt, da falscher Aufruf
+        # Stattdessen: Zustand der aktuellen Umwelt zurücksetzen
+        if hasattr(self.umwelt, 'umwelt') and hasattr(self.umwelt.umwelt, 'restart'):
+            self.umwelt.zustand_welt = self.umwelt.umwelt.restart()
         self.belohnungsErwartung = 0
         return self.gedächtnis.getBild(), {}
 
     def step(self, aktion):
         print("Aktion:" + str(aktion))
+        # Aktion als Array sicherstellen
+        aktion = np.array(aktion)
+        if aktion.ndim == 0 or aktion.shape == ():
+            raise ValueError(f"Aktion ist kein Array oder leer: {aktion}")
         # Aktion  0: Erinnerung auswählen
-        # Aktion  1: Selbstbewusstsein der Aktion zuweisen
-        # Aktion +2: Aktion auf die Umwelt
-        
-        # Der Agent wählt eine Erinnerung aus dem Gedächtnis
-        self.gedächtnis.setSchreibZeiger(aktion[0])
+        # Aktion  1: Aktion auf die Umwelt
+        self.gedächtnis.setSchreibZeiger(int(aktion[0]))
         gedanke = self.gedächtnis.getBild()
-
-        # Eine Beobachtung wird aus der Umwelt geladen
         beobachtung = self.umwelt.observe()
-        
-        # Der Agent vergleicht den Gedanken mit der Beobachtung
+        # Typ- und Formkonsistenz sicherstellen
+        gedanke = np.asarray(gedanke)
+        beobachtung = np.asarray(beobachtung)
+        if gedanke.shape != beobachtung.shape:
+            raise ValueError(f"Shape mismatch: Gedanke {gedanke.shape}, Beobachtung {beobachtung.shape}")
+        if gedanke.dtype != beobachtung.dtype:
+            gedanke = gedanke.astype(np.float32)
+            beobachtung = beobachtung.astype(np.float32)
+        # Wahrnehmungsdissonanz und Reward nach Architektur
         wahrnehmungsdissonanz = gedanke - beobachtung
-        wahrnehmungsdissonanzwert = self.cross_entropy_reward(gedanke, beobachtung)
-        
-        # print("Value: " + str(value))
-        # print("Average reward: " + str(self.belohnungsErwartung))
-        # No activation function on the reward gain
-        # reward = value - self.belohnungsErwartung
-        # Logistic    # The agent is rewarded based on the familarity between the state of mind and the world input
-        reward = np.exp(wahrnehmungsdissonanzwert + self.gedächtnis.getMeanReward())
-
-        # Der Agent führt nun die Aktion in der Welt aus
-        # print("aktion" + aktion[2:])
-        self.umwelt.act(aktion[2:])
-
-        # Update the memory with the new observation
+        self.wahrnehmungsdissonanzmatrix = wahrnehmungsdissonanz  # Für GUI-Zugriff
+        r_delta = -np.sum(np.abs(wahrnehmungsdissonanz))
+        # Evaluation: r_t = r_delta - 1/C * sum(r_G,t)
+        mean_reward = self.gedächtnis.getMeanReward() if hasattr(self.gedächtnis, 'getMeanReward') else 0
+        C = self.gedächtnis.getKapazität() if hasattr(self.gedächtnis, 'getKapazität') else 1
+        eval_reward = r_delta - (1/C) * mean_reward
+        reward = np.clip(eval_reward, -100, 100)
+        # Aktion an Umwelt
+        self.umwelt.act(int(aktion[1]))
         self.gedächtnis.update(Erinnerung(beobachtung, reward))
         self.umwelt_states.append(beobachtung)
-
-        # self.render()
-        # print("Reward: " + str(reward))
-
         self.belohnungen.append(reward)
-
+        print(f"Schreibzeiger: {self.gedächtnis.schreibZeiger}")
+        print(f"Memory-Content: {[e.getBild() for e in self.gedächtnis.speicher]}")
+        print(f"Umwelt-Zustand: {self.umwelt.zustand_welt}")
         print("Reward: " + str(reward))
-
-        print("Perception difference: " + str(wahrnehmungsdissonanzwert))
-
+        print("Perception difference: " + str(r_delta))
         return wahrnehmungsdissonanz, reward, False, False, {}
 
     def cross_entropy_reward(self, predicted, target):
-        # Clipping, um log(0) zu vermeiden
-        epsilon = 1e-15
-        predicted = np.clip(predicted, epsilon, 1 - epsilon)
-        
-        # Kreuzentropie
-        cross_entropy = -np.sum(target * np.log(predicted) + (1 - target) * np.log(1 - predicted))
-        
-        # Umkehren, da niedrigere Kreuzentropie besser ist
-        return -cross_entropy
+        # Robust: negative L1-Distanz als Reward, damit keine NaN entstehen
+        return -np.sum(np.abs(predicted - target))
 
     def render(self):
         print(self.gedächtnis)
