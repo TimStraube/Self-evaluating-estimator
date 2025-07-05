@@ -2,10 +2,10 @@ import gymnasium
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-from envs.test import Test
-from erinnerung import Erinnerung
-from gedächtnis import Gedächtnis
-from umwelt import Umwelt
+from src.erinnerung import Erinnerung
+from src.gedächtnis import Gedächtnis
+from src.umwelt import Umwelt
+from src.envs.test import Test
 
 class Agent(gymnasium.Env):
     def __init__(self):

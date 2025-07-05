@@ -1,6 +1,5 @@
-import random
+from src.erinnerung import Erinnerung
 import numpy as np
-from erinnerung import Erinnerung
 
 class Gedächtnis():
     def __init__(self, kapazität):

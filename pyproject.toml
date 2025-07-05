@@ -1,0 +1,31 @@
+[project]
+name = "self-evaluating-estimator"
+version = "0.1.0"
+description = "Reinforcement Learning Agent mit Gedächtnis, Wahrnehmungsdissonanz und PyQt6-GUI."
+authors = [
+    { name = "Tim Straube", email = "tim@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "PyQt6",
+    "gymnasium",
+    "stable-baselines3",
+    "torch",
+    "markdown (>=3.8.2,<4.0.0)"
+]
+
+[project.scripts]
+see-gui = "src.gui.main:main"
+see-train = "src.agent:main"
+dev-watchdog = "src.dev.dev_watchdog:main"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry.group.dev.dependencies]
+watchdog = "^6.0.0"
+
