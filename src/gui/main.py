@@ -373,7 +373,13 @@ class MainWindow(QMainWindow):
             self.agent.set_umwelt(neue_umwelt)
             self.umwelt = self.agent.umwelt
             # Gedächtnis nach Umweltwechsel neu initialisieren
-            self.agent.gedächtnis = self.create_memory(self.memory_size_spin.value())
+            try:
+                size = int(self.memory_input.text())
+                if size < 1:
+                    size = 1
+            except Exception:
+                size = 1
+            self.agent.gedächtnis = self.create_memory(size)
             self.label.setText(str(self.umwelt.zustand_welt))
             if hasattr(self.umwelt, "zustand"):
                 self.update_status_point(self.umwelt.zustand.name if hasattr(self.umwelt.zustand, "name") else self.umwelt.zustand)
@@ -539,6 +545,11 @@ class MainWindow(QMainWindow):
             print(f"Fehler in update_memory_visualization: {e}")
 
     def update_dissonanz_matrix(self):
+        from matplotlib.figure import Figure
+        from matplotlib import cm
+        from PyQt6.QtGui import QPixmap
+        import io
+        from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
         matrix = getattr(self.agent, "wahrnehmungsdissonanzmatrix", None)
         if matrix is None:
             self.dissonanz_label.setText("-")
@@ -547,26 +558,22 @@ class MainWindow(QMainWindow):
         # Bei 3D: nur erste Schicht anzeigen
         if arr.ndim == 3:
             arr = arr[0]
-        # Farbskala: grau (0) bis rot (Abweichung von 0)
-        max_abs = np.max(np.abs(arr)) if arr.size > 0 else 1
-        def dissonanz_color(val):
-            # Skala: dunkelgrau (0) zu rot (Abweichung von 0)
-            if val == 0 or max_abs == 0:
-                return "#222222"
-            f = min(abs(val) / max_abs, 1.0)
-            r = int(34 + (255-34)*f)
-            g = int(34 + (51-34)*f)
-            b = int(34 + (51-34)*f)
-            return f"#{r:02x}{g:02x}{b:02x}"
-        html = "<table style='border-collapse:collapse; font-family:monospace; font-size:12px; background:#222;'>"
-        for row in arr:
-            html += "<tr>"
-            for val in row:
-                color = dissonanz_color(val)
-                html += f"<td style='border:1px solid #555; min-width:18px; text-align:center; padding:2px; background:{color}; color:#fff;'>{val:.2f}</td>"
-            html += "</tr>"
-        html += "</table>"
-        self.dissonanz_label.setText(html)
+        rows, cols = arr.shape if arr.ndim == 2 else (1, arr.size)
+        min_val = float(np.min(arr)) if arr.size > 0 else 0
+        max_val = float(np.max(arr)) if arr.size > 0 else 1
+        # Erzeuge ein Bild für die gesamte Matrix
+        fig = Figure(figsize=(cols, rows*0.3), dpi=66)
+        ax = fig.add_subplot(111)
+        im = ax.imshow(arr, cmap=cm.coolwarm, vmin=min_val, vmax=max_val, aspect='auto')
+        ax.axis('off')
+        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+        buf.seek(0)
+        pixmap = QPixmap()
+        pixmap.loadFromData(buf.getvalue())
+        self.dissonanz_label.setPixmap(pixmap)
+        self.dissonanz_label.setFixedSize(80*cols, 24*rows)
 
     def update_training_status_point(self, zustand):
         emojis = {
