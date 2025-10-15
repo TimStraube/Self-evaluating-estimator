@@ -1,0 +1,53 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+% Global styles for nodes and paths
+\tikzset{
+  every node/.style={text=black, draw=black, font=\Large, line width=0.5mm},
+  every path/.style={draw=black, line width=0.5mm}
+}
+
+\begin{document}
+\begin{tikzpicture}[node distance=2cm, auto]
+  % Nodes 
+  \node (agent) [minimum width=4cm, minimum height=4cm, rounded corners] {
+    \begin{tabular}{c}  
+      RL Agent\\ 
+      Aktionen: $a_U$, $a_c$ \\
+      Wahrnehmung: $\Delta O$ \\
+      Belohnung: $r_t$
+    \end{tabular}
+    };
+  \node (memory) [above=-1cm of agent, xshift=9cm, minimum width=6cm, minimum height=2cm, rounded corners]  {
+      \begin{tabular}{l}
+      $ O = [O_0, O_1, ..., O_{C-1}] $ \\
+      $ [r_1, r_2, ..., r_C] $\\
+      $ r_{c, t + 1} = r_{c, t} + 2(a_c - 0.5) r_{\Delta} $ \\
+      $ O_{c, t + 1} = (1 - r_{\Delta})a_cO_c + r_{\Delta}(1 - a_c)\mathcal{F} \mathcal{F} \mathcal{T} (O_{U, t})) $ 
+      \end{tabular}
+  };
+  \node (world) [right=14cm of agent, minimum width=4cm, minimum height=4cm, rounded corners] {Umwelt, U};
+  \node (evaluator) [rectangle, below=-1.4cm of agent, xshift=5.6cm, rounded corners] {
+    \begin{tabular}{c}  Evaluation \\ $r_{\Delta} - {{a_c}^T r_c}$ \end{tabular}
+  };
+  \node (calculator) [rectangle, below=-1.6cm of agent, xshift=11.6cm, rounded corners] {
+    \begin{tabular}{c} 
+      Wahrnehmungsdissonanz \\ 
+      $\Delta O = (O {a_c}^T)\cdot \mathcal{F} \mathcal{F} \mathcal{T} (O_{U, t})$ \\
+      $ r_{\Delta} = -\Delta O$ \\
+    \end{tabular}
+  };
+
+  \draw[->] (calculator) to[bend left=40] node[midway, above, draw=none, fill=none] {$\Delta O$} (agent);
+  \draw[->] (memory) to[bend right=5] node[midway, left, draw=none, fill=none] {$r_{c}, a_c$} (evaluator);
+  \draw[->] (world) to[bend left=5] node[midway, above, draw=none, fill=none] {$O_{U, t}$} (calculator);
+  \draw[->] (memory) to[bend right=10] node[midway, left, draw=none, fill=none] {$O, a_c$} (calculator);
+  \draw[->] (calculator) to[bend left=0] node[midway, above, draw=none, fill=none] {$r_{\Delta}$} (evaluator);
+  \draw[->] (calculator) to[bend right=10] node[midway, right, draw=none, fill=none] {$a_c, r_{\Delta, t + 1}$} (memory);
+  \draw[->] (agent) to[bend left=10] node[midway, above, draw=none, fill=none] {$a_c$} (memory);
+  \draw[->] (agent) to[bend left=45] node[midway, above, draw=none, fill=none] {$a_{U, t}$} (world);
+  \draw[->] (world) to[bend right=5] node[midway, above, draw=none, fill=none] {$O_{U, t+1}$} (memory);
+  \draw[->] (evaluator) to[bend left=10] node[midway, above, draw=none, fill=none] {$r_t$} (agent);
+\end{tikzpicture}
+\end{document}

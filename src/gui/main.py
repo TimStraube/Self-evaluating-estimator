@@ -21,7 +21,7 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.types.agent import Trainingszustand
 
-from umwelt import Umwelt
+from src.umwelt import Umwelt
 from src.agent import Agent
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
@@ -172,7 +172,7 @@ class MainWindow(QMainWindow):
         ]
         envs = {}
         for file in env_files:
-            modulename = f"envs.{file[:-3]}"
+            modulename = f"src.envs.{file[:-3]}"
             module = importlib.import_module(modulename)
             # Suche nach einer Klasse mit gleichem Namen wie das File (Case-insensitive)
             classname = file[:-3].capitalize()
@@ -245,8 +245,8 @@ class MainWindow(QMainWindow):
 
     def create_memory(self, size):
         try:
-            from gedächtnis import Gedächtnis
-            from erinnerung import Erinnerung
+            from src.gedächtnis import Gedächtnis
+            from src.erinnerung import Erinnerung
             import numpy as np
             return Gedächtnis(size)
         except Exception:
