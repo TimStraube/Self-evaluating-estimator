@@ -43,6 +43,7 @@ black = ">=22.0.0"
 flake8 = ">=5.0.0"
 mypy = ">=1.0.0"
 pre-commit = ">=2.20.0"
+watchdog = "^6.0.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = ">=5.0.0"

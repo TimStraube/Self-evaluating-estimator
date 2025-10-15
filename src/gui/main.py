@@ -145,26 +145,16 @@ class MainWindow(QMainWindow):
         # --- Agenten-Steuerungsbereich als Container (unverändert) ---
         self.agent_controls_box = QGroupBox("Steuerung & Einstellungen")
         self.agent_controls_layout = QVBoxLayout()
+        from PyQt6.QtWidgets import QLineEdit
+        # Neue horizontale Layout-Reihe für Inputs und Training-Button
         self.memory_control_layout = QHBoxLayout()
-        self.memory_size_spin = QSpinBox()
-        self.memory_size_spin.setMinimum(1)
-        self.memory_size_spin.setMaximum(100)
-        self.memory_size_spin.setValue(5)
-        self.memory_size_spin.setPrefix("Zellen: ")
-        self.memory_reset_button = QPushButton("Gedächtnis resetten")
-        self.memory_reset_button.clicked.connect(self.reset_memory)
-        self.memory_control_layout.addWidget(self.memory_size_spin)
-        self.memory_control_layout.addWidget(self.memory_reset_button)
-        self.agent_controls_layout.addLayout(self.memory_control_layout)
-        self.train_toggle_button = QPushButton("Training starten")
-        self.train_toggle_button.setCheckable(True)
-        self.train_toggle_button.clicked.connect(self.toggle_training)
-        self.agent_controls_layout.addWidget(self.train_toggle_button)
-        self.single_step_button = QPushButton("Einzelschritt Training")
-        self.single_step_button.clicked.connect(self.simulation_step)
-        self.agent_controls_layout.addWidget(self.single_step_button)
-        # --- Hyperparameter: Lernrate ---
-        self.lr_layout = QHBoxLayout()
+        self.memory_input = QLineEdit()
+        self.memory_input.setText("5")
+        self.memory_input.setFixedWidth(120)  # 25% der typischen Breite (bei ca. 480px Layout)
+        self.memory_input.setPlaceholderText("Zellen")
+        self.memory_input.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.memory_control_layout.addWidget(self.memory_input)
+        # Lernrate-Input
         self.lr_label = QLabel("Lernrate:")
         self.lr_spin = QDoubleSpinBox()
         self.lr_spin.setDecimals(5)
@@ -172,19 +162,23 @@ class MainWindow(QMainWindow):
         self.lr_spin.setMinimum(0.00001)
         self.lr_spin.setMaximum(1.0)
         self.lr_spin.setValue(0.0003)  # Standardwert für PPO
-        self.lr_layout.addWidget(self.lr_label)
-        self.lr_layout.addWidget(self.lr_spin)
-        self.agent_controls_layout.addLayout(self.lr_layout)
-        # --- Simulationsschritte (max_steps) ---
-        self.max_steps_layout = QHBoxLayout()
+        self.memory_control_layout.addWidget(self.lr_label)
+        self.memory_control_layout.addWidget(self.lr_spin)
+        # Max Steps Input
         self.max_steps_label = QLabel("max. Schritte:")
         self.max_steps_spin = QSpinBox()
         self.max_steps_spin.setMinimum(1)
         self.max_steps_spin.setMaximum(100000)
         self.max_steps_spin.setValue(10)
-        self.max_steps_layout.addWidget(self.max_steps_label)
-        self.max_steps_layout.addWidget(self.max_steps_spin)
-        self.agent_controls_layout.addLayout(self.max_steps_layout)
+        self.memory_control_layout.addWidget(self.max_steps_label)
+        self.memory_control_layout.addWidget(self.max_steps_spin)
+        # Training starten Button ganz rechts
+        self.train_toggle_button = QPushButton("Training starten")
+        self.train_toggle_button.setCheckable(True)
+        self.train_toggle_button.clicked.connect(self.toggle_training)
+        self.memory_control_layout.addStretch(1)
+        self.memory_control_layout.addWidget(self.train_toggle_button)
+        self.agent_controls_layout.addLayout(self.memory_control_layout)
         self.agent_controls_box.setLayout(self.agent_controls_layout)
         # --- Ende Agenten-Steuerung ---
 
@@ -317,7 +311,9 @@ class MainWindow(QMainWindow):
 
         # Agent initialisieren mit Gedächtnisgröße
         self.agent = Agent()
-        self.agent.gedächtnis = self.create_memory(self.memory_size_spin.value())
+        # Gedächtnis-Input-Events erst jetzt verbinden
+        self.memory_input.textChanged.connect(self._on_memory_input_changed)
+        self.reset_memory()  # Initialwert übernehmen
         self.umwelt = self.agent.umwelt
 
         self.timer = QTimer()
@@ -326,7 +322,6 @@ class MainWindow(QMainWindow):
         self.max_steps = 10
         self.sim_running = False
 
-        self.gedächtnis = self.create_memory(self.memory_size_spin.value())
 
         # --- Layout und Felder für Umwelt-Ansicht initialisieren (jetzt direkt nach Widget-Erstellung!) ---
         self.umwelt_layout_view = QVBoxLayout()
@@ -439,18 +434,34 @@ class MainWindow(QMainWindow):
             return None
 
     def reset_memory(self):
-        size = self.memory_size_spin.value()
+        try:
+            size = int(self.memory_input.text())
+            if size < 1:
+                size = 1
+        except Exception:
+            size = 1
+        self.memory_input.setText(str(size))
         self.agent.gedächtnis = self.create_memory(size)
         self.update_memory_visualization()
 
+    def _on_memory_input_changed(self):
+        # Automatisches Reset des Gedächtnisses bei Änderung
+        self.reset_memory()
+
     def update_memory_visualization(self):
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib import cm
+        from PyQt6.QtGui import QPixmap
+        import io
+        from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
         memory = self.agent.gedächtnis
         if memory is None:
-            self.memory_label.clear()
+            empty = QWidget()
+            self.memory_scroll.setWidget(empty)
             return
         try:
             kap = memory.getKapazität()
-            # Hole die Form des Beobachtungsarrays der aktuellen Umwelt
             obs_shape = None
             try:
                 obs_shape = tuple(self.umwelt.observe().shape)
@@ -465,65 +476,67 @@ class MainWindow(QMainWindow):
             else:
                 rows, cols = 1, 1
             schreibzeiger = getattr(memory, "schreibZeiger", None)
-            # Für Farbskala: min/max Belohnung bestimmen
-            belohnungen = [getattr(memory.speicher[i], "getBelohnung", lambda: 0)() for i in range(kap)]
-            min_bel = min(belohnungen) if belohnungen else 0
-            max_bel = max(belohnungen) if belohnungen else 1
-            def reward_color(val):
-                # Skala: dunkelgrau (0) - rot (negativ) - grün (positiv)
-                if val == 0 or (max_bel == 0 and min_bel == 0):
-                    return "#222222"
-                if val < 0 and min_bel < 0:
-                    # Interpoliert von #222222 (0) zu #ff3333 (min)
-                    f = min(abs(val) / abs(min_bel), 1.0)
-                    r = int(34 + (255-34)*f)
-                    g = int(34 + (51-34)*f)
-                    b = int(34 + (51-34)*f)
-                    return f"#{r:02x}{g:02x}{b:02x}"
-                elif val > 0 and max_bel > 0:
-                    # Interpoliert von #222222 (0) zu #33ff33 (max)
-                    f = min(val / max_bel, 1.0)
-                    r = int(34 + (51-34)*f)
-                    g = int(34 + (255-34)*f)
-                    b = int(34 + (51-34)*f)
-                    return f"#{r:02x}{g:02x}{b:02x}"
-                else:
-                    return "#222222"
-            # Matrix-Grid als HTML-Tabelle
-            html = "<div style='font-family:monospace; font-size:12px; background:#222; color:#fff; display:flex; flex-direction:row; align-items:flex-start; gap:8px;'>"
+            # Finde min/max Wert aller Grids für Farbskala
+            all_values = []
             for i in range(kap):
                 try:
                     erinnerung = memory.speicher[i]
                     bild = erinnerung.getBild()
-                    belohnung = erinnerung.getBelohnung()
                     arr = np.array(bild)
-                    # Wähle nur die erste Schicht, falls 3D
                     if arr.ndim == 3:
                         arr = arr[0]
                     arr = arr.reshape((rows, cols))
-                    # Highlight für aktuelle Erinnerung
-                    if schreibzeiger == i:
-                        html += f"<div style='background:#444; border:2px solid #3399ff; margin:0; display:inline-block; padding:2px;'>"
-                    else:
-                        html += f"<div style='background:#333; border:1px solid #555; margin:0; display:inline-block; padding:2px;'>"
-                    html += f"<b style='color:#fff;'>Zelle {i} (Belohnung: <span style='color:{reward_color(belohnung)}'>{belohnung:.1f}</span>)</b><br>"
-                    html += "<table style='border-collapse:collapse;'>"
-                    for r in range(rows):
-                        html += "<tr>"
-                        for c in range(cols):
-                            val = arr[r, c]
-                            html += f"<td style='border:1px solid #555; min-width:18px; text-align:center; padding:2px; background:#222; color:#fff;'>{val:.1f}</td>"
-                        html += "</tr>"
-                    html += "</table></div>"
+                    all_values.extend(arr.flatten())
                 except Exception:
-                    html += f"<div>Zelle {i}: Fehler beim Lesen</div>"
-            html += "</div>"
-            self.memory_label.setText(html)
-            self.memory_label.setMinimumWidth(max(400, (cols+1)*kap*20))
-            self.memory_label.setMinimumHeight(min(1200, (rows+1)*kap*20+100))
-            self.memory_label.setMaximumHeight(2000)
-        except Exception:
-            self.memory_label.clear()
+                    continue
+            if all_values:
+                min_val = float(np.min(all_values))
+                max_val = float(np.max(all_values))
+            else:
+                min_val, max_val = 0, 1
+            # Neues Layout für Heatmaps
+            heatmap_layout = QHBoxLayout()
+            heatmap_layout.setSpacing(2)
+            heatmap_layout.setContentsMargins(0,0,0,0)
+            for i in range(kap):
+                try:
+                    erinnerung = memory.speicher[i]
+                    bild = erinnerung.getBild()
+                    arr = np.array(bild)
+                    if arr.ndim == 3:
+                        arr = arr[0]
+                    arr = arr.reshape((rows, cols))
+                    fig = Figure(figsize=(1.2, 1.2), dpi=66)
+                    ax = fig.add_subplot(111)
+                    im = ax.imshow(arr, cmap=cm.coolwarm, vmin=min_val, vmax=max_val, aspect='auto')
+                    ax.axis('off')
+                    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+                    buf.seek(0)
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(buf.getvalue())
+                    label = QLabel()
+                    label.setPixmap(pixmap)
+                    label.setFixedSize(80, 80)
+                    if schreibzeiger == i:
+                        label.setStyleSheet("border: 2px solid #3399ff; margin:0px 1px;")
+                    else:
+                        label.setStyleSheet("border: 1px solid #555; margin:0px 1px;")
+                    heatmap_layout.addWidget(label)
+                except Exception:
+                    label = QLabel(f"Zelle {i}: Fehler")
+                    heatmap_layout.addWidget(label)
+            # Setze das neue Layout in den Scrollbereich
+            container = QWidget()
+            container.setLayout(heatmap_layout)
+            self.memory_scroll.setWidget(container)
+            self.memory_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+            self.memory_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        except Exception as e:
+            empty = QWidget()
+            self.memory_scroll.setWidget(empty)
+            print(f"Fehler in update_memory_visualization: {e}")
 
     def update_dissonanz_matrix(self):
         matrix = getattr(self.agent, "wahrnehmungsdissonanzmatrix", None)
