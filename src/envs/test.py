@@ -21,10 +21,12 @@ class Test:
 
     def step(self, zustand, aktion):
         zustand = zustand.copy()
+        # Aktion ggf. aus Liste extrahieren
+        if isinstance(aktion, (list, tuple, numpy.ndarray)):
+            aktion = aktion[0]
         x = aktion // self.size
         y = aktion % self.size
-        if zustand[x, y] == 0:
-            zustand[x, y] = 1
+        zustand[x, y] += 1
         return zustand
 
     def terminated(self, zustand, aktion):

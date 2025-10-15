@@ -1,6 +1,5 @@
-import random
-
 from src.types.env import Umweltzustand
+import random
 
 class Umwelt():
     def __init__(self, umwelt):

@@ -11,3 +11,7 @@ This project is intended to serve as a mindgame and does not aim to be a useful 
 3. Optimize observation selection and the policy function such that the two goals complement and self regulate each other.
 
 ![Self Evaluating Estimator Network](docs/images/SEE.png)
+
+## Run the gui
+
+`poetry run python -m src.gui.main`

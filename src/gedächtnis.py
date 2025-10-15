@@ -1,4 +1,4 @@
-import random
+from src.erinnerung import Erinnerung
 import numpy as np
 from src.erinnerung import Erinnerung
 
