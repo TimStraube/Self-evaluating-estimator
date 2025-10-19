@@ -7,20 +7,12 @@ from src.erinnerung import Erinnerung
 from src.gedächtnis import Gedächtnis
 from src.umwelt import Umwelt
 
-class AgentRewardClasses(gymnasium.Env):
+class Agent(gymnasium.Env):
     def __init__(self, use_arc=False):
         super().__init__()
         self.use_arc = use_arc
 
-        if use_arc:
-            # Use ARC environment
-            self.arc_env = ARCEnvironment()
-            self.umwelt = None
-        else:
-            # Use original test environment
-            from src.envs.test import Test
-            self.umwelt = Umwelt(Test())
-            self.arc_env = None
+        self.env = make_vec_env(ARCEnvironment if use_arc else lambda: Umwelt(...), n_envs=1)
 
         # Memory system
         self.gedächtnis = Gedächtnis(5)
