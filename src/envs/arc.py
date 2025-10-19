@@ -1,19 +1,15 @@
 import json
 import numpy as np
-import gymnasium as gym
-from gymnasium import spaces
 import random
 import os
 
-class ARCEnvironment(gym.Env):
+class ARCEnvironment:
     """
     ARC (Abstraction and Reasoning Corpus) Environment for SEE network.
     Presents ARC tasks as reinforcement learning problems.
     """
 
     def __init__(self, data_path=None, task_ids=None, max_grid_size=30):
-        super().__init__()
-
         # Load ARC data
         self.data_path = data_path or "/home/timstraube/Programme/SEE/data/arc-prize-2025"
         self.tasks = {}
@@ -24,16 +20,6 @@ class ARCEnvironment(gym.Env):
 
         # Load training data
         self.load_arc_data()
-
-        # Action space: select memory slot (0-4) and grid position (0-899 for 30x30 grid)
-        self.action_space = spaces.MultiDiscrete([5, max_grid_size * max_grid_size])
-
-        # Observation space: input and prediction grids
-        self.observation_space = spaces.Box(
-            low=0, high=10,  # ARC uses values 0-9 typically
-            shape=(2, max_grid_size, max_grid_size),
-            dtype=np.int32
-        )
 
         # Current state
         self.current_input = None
@@ -79,8 +65,7 @@ class ARCEnvironment(gym.Env):
 
     def reset(self, seed=None, options=None):
         """Reset environment to start of new episode"""
-        super().reset(seed=seed)
-
+        # seed und options werden aktuell nicht verwendet, aber für Gymnasium-Kompatibilität akzeptiert
         # Select random task
         if self.task_ids:
             self.current_task_id = random.choice(self.task_ids)
@@ -108,7 +93,7 @@ class ARCEnvironment(gym.Env):
         prediction_padded = self._pad_grid(self.current_prediction)
         observation = np.stack([input_padded, prediction_padded], axis=0)
 
-        return observation, {}
+        return observation
 
     def step(self, action):
         """Execute one step in the environment"""
@@ -140,7 +125,7 @@ class ARCEnvironment(gym.Env):
         prediction_padded = self._pad_grid(self.current_prediction)
         observation = np.stack([input_padded, prediction_padded], axis=0)
 
-        return observation, reward, done, False, {}
+        return observation, reward, done, {}
 
     def _pad_grid(self, grid):
         """Pad grid to maximum size"""

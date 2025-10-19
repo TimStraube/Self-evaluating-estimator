@@ -1,35 +1,42 @@
-from src.erinnerung import Erinnerung
 import numpy as np
-from src.erinnerung import Erinnerung
 
-class Gedächtnis():
-    def __init__(self, kapazität):
-        self.kapazität = kapazität
-        self.speicher = np.array([Erinnerung(np.zeros((3, 3)), 0) for _ in range(kapazität)], dtype=object)
-        self.schreibZeiger = 0
-        self.belohnungen = []
 
-    def update(self, erfahrung):
-        # print("Updating memory with state of mind: " + str(stateOfMind))
-        # For a new input a stateOfMind is forgotten
-        self.speicher[self.schreibZeiger] = erfahrung
+class Memory():
+    def __init__(self, capacity, image_shape):
+        '''Initialises a memory to store observations and their associated rewards.'''
 
-    def getErinnerung(self):
-        return self.speicher[self.schreibZeiger]
-    
-    def getBild(self):
-        return self.speicher[self.schreibZeiger].getBild()
+        # Initialize memory capacity
+        self.capacity = capacity
+        self.image_shape = image_shape
+        # Initialize the memory for images aka observations in the frequency domain
+        self.image = np.zeros((capacity, *image_shape), dtype=np.float32)
+        # Initialize the memory for rewards associated with each observation
+        self.reward = np.zeros(capacity, dtype=np.float32)
 
-    def setSchreibZeiger(self, schreibZeiger):
-        self.schreibZeiger = schreibZeiger
+    def getReward(self):
+        return self.reward
 
-    def getKapazität(self):
-        return self.kapazität
+    def getRewardAt(self, pointer):
+        return self.reward[pointer]
 
-    def getReward(self, schreibZeiger):
-        return self.speicher[schreibZeiger].getBelohnung()
+    def getAverageReward(self):
+        return sum(self.reward) / len(self.reward) if self.reward else 0
 
-    def getMeanReward(self):
-        for i in range(self.kapazität):
-            self.belohnungen.append(self.speicher[i].getBelohnung())
-        return np.mean(self.belohnungen)
+    def getImageAt(self, pointer):
+        return self.image[pointer]
+
+    def getAllImages(self):
+        return self.image
+
+    def getCapacity(self):
+        return len(self.image)
+
+    def update(self, image, reward):
+        '''Updates the memory at the current write pointer with the new image and reward.'''
+        self.image = image
+        self.reward = reward
+
+    def updateAt(self, pointer, image, reward):
+        '''Updates the memory at the specified pointer with the new image and reward.'''
+        self.image[pointer] = image
+        self.reward[pointer] = reward

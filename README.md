@@ -14,4 +14,4 @@ This project is intended to serve as a mindgame and does not aim to be a useful 
 
 ## Run the gui
 
-`poetry run python -m src.gui.main`
+`poetry run python src/agents/main.py`
