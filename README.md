@@ -12,6 +12,6 @@ This project is intended to serve as a mindgame and does not aim to be a useful 
 
 ![Self Evaluating Estimator Network](docs/images/SEE.png)
 
-## Run the gui
+## Running it
 
 `poetry run python src/agents/main.py`
