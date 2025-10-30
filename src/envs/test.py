@@ -1,6 +1,5 @@
 import random
 import numpy
-from src.types.env import Aktion, Beobachtung
 
 class Test:
     def __init__(self, size=3):

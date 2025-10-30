@@ -14,40 +14,46 @@
   \node (agent) [minimum width=4cm, minimum height=4cm, rounded corners] {
     \begin{tabular}{c}  
       RL Agent\\ 
-      Aktionen: $a_U$, $a_c$ \\
-      Wahrnehmung: $\Delta O$ \\
-      Belohnung: $r_t$
+      Aktionen: $a_u$, $a_c$ \\
+      Wahrnehmung: $O_y$ \\
+      Belohnung: $r$
     \end{tabular}
     };
   \node (memory) [above=-1cm of agent, xshift=9cm, minimum width=6cm, minimum height=2cm, rounded corners]  {
       \begin{tabular}{l}
       $ O = [O_0, O_1, ..., O_{C-1}] $ \\
-      $ [r_1, r_2, ..., r_C] $\\
-      $ r_{c, t + 1} = r_{c, t} + 2(a_c - 0.5) r_{\Delta} $ \\
-      $ O_{c, t + 1} = (1 - r_{\Delta})a_cO_c + r_{\Delta}(1 - a_c)\mathcal{F} \mathcal{F} \mathcal{T} (O_{U, t})) $ 
+      $ [r_0, r_1, ..., r_{C-1}] $\\
+      Step 3: Update \\
+      $ r_{c + 1} = 0.5(r_{c} + a_cr_y) $ \\
+      $ O_{c + 1} = (1 - r_y)a_{c}O_{c} + r_yO_u $ 
       \end{tabular}
   };
-  \node (world) [right=14cm of agent, minimum width=4cm, minimum height=4cm, rounded corners] {Umwelt, U};
+  \node (world) [right=14cm of agent, minimum width=4cm, minimum height=4cm, rounded corners] {
+      \begin{tabular}{c} 
+        Umwelt, u\\ 
+        $\mathcal{F} \mathcal{F} \mathcal{T} (o_{u})$
+      \end{tabular}
+  };
   \node (evaluator) [rectangle, below=-1.4cm of agent, xshift=5.6cm, rounded corners] {
-    \begin{tabular}{c}  Evaluation \\ $r_{\Delta} - {{a_c}^T r_c}$ \end{tabular}
+    \begin{tabular}{c}  Step 2: Eval \\ $r_{y} - {{a_c}^T r_c}$ \end{tabular}
   };
   \node (calculator) [rectangle, below=-1.6cm of agent, xshift=11.6cm, rounded corners] {
     \begin{tabular}{c} 
-      Wahrnehmungsdissonanz \\ 
-      $\Delta O = (O {a_c}^T)\cdot \mathcal{F} \mathcal{F} \mathcal{T} (O_{U, t})$ \\
-      $ r_{\Delta} = -\Delta O$ \\
+      Step 1: Perception\\ 
+      $O_y = (O {a_c}^T)\cdot O_{u}$ \\
+      $ r_y = V_{O_y} (\sum (O a_{c}^T)^2 - \sum O_{u}^2)$ \\
     \end{tabular}
   };
 
-  \draw[->] (calculator) to[bend left=40] node[midway, above, draw=none, fill=none] {$\Delta O$} (agent);
-  \draw[->] (memory) to[bend right=5] node[midway, left, draw=none, fill=none] {$r_{c}, a_c$} (evaluator);
-  \draw[->] (world) to[bend left=5] node[midway, above, draw=none, fill=none] {$O_{U, t}$} (calculator);
+  \draw[->] (calculator) to[bend left=40] node[midway, above, draw=none, fill=none] {$O_y$} (agent);
+  \draw[->] (memory) to[bend right=5] node[midway, left, draw=none, fill=none] {$r_{c}, a_{c}$} (evaluator);
+  \draw[->] (world) to[bend left=5] node[midway, above, draw=none, fill=none] {$O_{u}$} (calculator);
   \draw[->] (memory) to[bend right=10] node[midway, left, draw=none, fill=none] {$O, a_c$} (calculator);
-  \draw[->] (calculator) to[bend left=0] node[midway, above, draw=none, fill=none] {$r_{\Delta}$} (evaluator);
-  \draw[->] (calculator) to[bend right=10] node[midway, right, draw=none, fill=none] {$a_c, r_{\Delta, t + 1}$} (memory);
+  \draw[->] (calculator) to[bend left=0] node[midway, above, draw=none, fill=none] {$r_{y}$} (evaluator);
+  \draw[->] (calculator) to[bend right=10] node[midway, right, draw=none, fill=none] {$a_c, r_{y}$} (memory);
   \draw[->] (agent) to[bend left=10] node[midway, above, draw=none, fill=none] {$a_c$} (memory);
-  \draw[->] (agent) to[bend left=45] node[midway, above, draw=none, fill=none] {$a_{U, t}$} (world);
-  \draw[->] (world) to[bend right=5] node[midway, above, draw=none, fill=none] {$O_{U, t+1}$} (memory);
-  \draw[->] (evaluator) to[bend left=10] node[midway, above, draw=none, fill=none] {$r_t$} (agent);
+  \draw[->] (agent) to[bend left=55] node[midway, above, draw=none, fill=none] {$a_{u}$} (world);
+  \draw[->] (world) to[bend right=5] node[midway, above, draw=none, fill=none] {$O_{u}$} (memory);
+  \draw[->] (evaluator) to[bend left=10] node[midway, above, draw=none, fill=none] {$r$} (agent);
 \end{tikzpicture}
 \end{document}
