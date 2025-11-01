@@ -16,11 +16,9 @@ class SEE(gym.Env):
             shape=(5,),
             dtype=np.float32
         )
-        self.action_space = gym.spaces.Tuple((
-            gym.spaces.Discrete(5),
-            gym.spaces.Box(low=0.0, high=1.0, shape=(
-                5,), dtype=np.float32) 
-        ))
+        # First action: environment action (5 discrete choices)
+        # Next 5 actions: memory weights (discretized to 10 levels each)
+        self.action_space = gym.spaces.MultiDiscrete([5, 10, 10, 10, 10, 10])
 
     def reset(self, seed=None, options=None):
         obs = self.environment.reset()
@@ -30,8 +28,10 @@ class SEE(gym.Env):
     def step(self, action):
         # Action environment is a single integer
         a_u = action[0]
-        # Action memory is a distribution over memory slots for example [0.1, 0.2, 0.3, 0.2, 0.2]
-        a_c = action[1:] / np.sum(action[1:])
+        # Action memory: convert discretized values (0-9) to continuous weights (0-1)
+        # and normalize to sum to 1
+        memory_actions = action[1:].astype(np.float32) / 9.0  # Scale to [0, 1]
+        a_c = memory_actions / np.sum(memory_actions) if np.sum(memory_actions) > 0 else np.ones(5, dtype=np.float32) / 5
 
         o_u, done, info = self.environment.step(a_u)
 
@@ -70,6 +70,9 @@ class SEE(gym.Env):
 
         truncated = False
         info = {}
+        # Ensure correct data types for Stable Baselines3
+        O_y = np.array(O_y, dtype=np.float32)
+        r = float(r)
         return O_y, r, done, truncated, info
 
     def render(self):

@@ -13,9 +13,9 @@ class RandomEnv():
         return obs
 
     def step(self, action):
-        obs = np.random.rand(5)
-        reward = np.random.rand()
-        done = np.random.rand() > 0.95
+        obs = np.random.rand(5).astype(np.float32)
+        reward = float(np.random.rand())
+        done = bool(np.random.rand() > 0.95)
         info = {}
         return obs, done, info
 
