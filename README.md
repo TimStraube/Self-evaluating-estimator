@@ -2,7 +2,7 @@
 
 ## Info
 
-A fun little Deep Reinforcement Learning Project for experiementing with strange architectures.
+A fun little Deep Reinforcement Learning Project for experimenting with strange architectures.
 
 ## Ideas
 
