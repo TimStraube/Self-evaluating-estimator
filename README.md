@@ -14,10 +14,6 @@ Rewards are computed based on the difference between the current reward and the 
 
 ![Self Evaluating Estimator Network](docs/images/SEE.png)
 
-## Getting started
-
-### Installing poetry
-
 ### Running the agent in the global environment
 
 The global environment is the set of all local environment and transsitions inbetween.

@@ -2,7 +2,6 @@ import gymnasium
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-from src.envs.arc_environment import ARCEnvironment
 from src.erinnerung import Erinnerung
 from src.gedächtnis import Gedächtnis
 from src.umwelt import Umwelt
@@ -101,9 +100,7 @@ class Agent(gymnasium.Env):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Train an agent in ARC or original environment.")
-    parser.add_argument('--env', type=str, choices=['arc', 'original'], default='original',
-                        help='Environment to use: "arc" for ARCEnvironment, "original" for Test environment.')
+    parser = argparse.ArgumentParser(description="Train an agent in the test environment.")
     parser.add_argument('--memory-size', type=int, default=5,
                         help='Size of the memory (Gedächtnis).')
     parser.add_argument('--timesteps', type=int, default=10000,
@@ -113,10 +110,7 @@ def main():
     args = parser.parse_args()
 
     # Initialize environment
-    if args.env == 'arc':
-        env = ARCEnvironment()
-    else:
-        env = Test()
+    env = Test()
 
     umwelt = Umwelt(env)
     agent = Agent()

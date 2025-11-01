@@ -1,7 +1,7 @@
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_checker import check_env
-from src.see import SEE
+from src.agents.see import SEE
 
 if __name__ == "__main__":
     env = SEE(capacity=5)

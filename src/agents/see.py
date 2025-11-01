@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
-from src.envs import random, arc
-from src.memory import Memory
+from src.envs import random
+from src.agents.memory import Memory
 
 
 class SEE(gym.Env):
