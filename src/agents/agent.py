@@ -6,12 +6,12 @@ from src.envs.arc_environment import ARCEnvironment
 from src.erinnerung import Erinnerung
 from src.gedächtnis import Gedächtnis
 from src.umwelt import Umwelt
+from src.envs.test import Test
 
 class Agent(gymnasium.Env):
     def __init__(self):
         super().__init__()
         # Use original test environment
-        from src.envs.test import Test
         self.umwelt = Umwelt(Test())
 
         # Memory system
@@ -116,7 +116,6 @@ def main():
     if args.env == 'arc':
         env = ARCEnvironment()
     else:
-        from src.envs.test import Test
         env = Test()
 
     umwelt = Umwelt(env)
