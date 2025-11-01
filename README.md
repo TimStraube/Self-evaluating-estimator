@@ -2,16 +2,28 @@
 
 ## Info
 
-This project is intended to serve as a mindgame and does not aim to be a useful architecture in a practical way.
+A fun little Deep Reinforcement Learning Project for experiementing with strange architectures.
 
 ## Ideas
 
-1. Build a system which can compute rewards for an reinforcement learning agent based on the differences between past observations and the current observation.
-2. The agent shall observe only the difference between a self chosen observation from its memory and the observation from the environment.
-3. Optimize observation selection and the policy function such that the two goals complement and self regulate each other.
+Self evaluating estimator networks are a experimental deep reinforcement learning architecture. Post action the previous observation from the environment is being transformed into frequency domain using the fast fourier transform algorithm.
 
 ![Self Evaluating Estimator Network](docs/images/SEE.png)
 
-## Running it
+## Getting started
 
-`poetry run python src/agents/main.py`
+### Installing poetry
+
+### Running the agent in the global environment
+
+The global environment is the set of all local environment and transsitions inbetween.
+
+`bash run.sh`
+
+### Testing the logical integrity of the agent and environments
+
+`bash test.sh`
+
+### Generating benchmarks and visualizations of a paritcular livetime
+
+`bash benchmark.sh`
